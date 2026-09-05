@@ -41,12 +41,7 @@ func (cfg *apiConfig) handleUsersPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	respondWithJson(w, http.StatusOK, struct {
-		Id         uuid.UUID `json:"id"`
-		Created_at time.Time `json:"created_at"`
-		Updated_at time.Time `json:"updated_at"`
-		Email      string    `json:"email"`
-	}{
+	respondWithJson(w, http.StatusCreated, User{
 		user.ID,
 		user.CreatedAt,
 		user.UpdatedAt,

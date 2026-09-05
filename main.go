@@ -18,6 +18,7 @@ import _ "github.com/lib/pq"
 type apiConfig struct {
 	fileServerHits atomic.Int32
 	db             *database.Queries
+	platform       string
 }
 
 func (cfg *apiConfig) middlewareMetricsInc(next http.Handler) http.Handler {
@@ -34,12 +35,6 @@ func (cfg *apiConfig) metricHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(fmt.Sprintf("<html>\n  <body>\n    <h1>Welcome, Chirpy Admin</h1>\n    <p>Chirpy has been visited %d times!</p>\n  </body>\n</html>", cfg.fileServerHits.Load())))
 }
 
-func (cfg *apiConfig) resetHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Add("Content-Type", "text/plain; charset=utf-8")
-	w.WriteHeader(http.StatusOK)
-	cfg.fileServerHits.Store(0)
-}
-
 func healthzHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
@@ -53,6 +48,7 @@ func main() {
 	}
 
 	dbURL := os.Getenv("DB_URL")
+	platform := os.Getenv("PLATFORM")
 	db, err := sql.Open("postgres", dbURL)
 	defer db.Close()
 
@@ -64,6 +60,7 @@ func main() {
 	cfg := &apiConfig{
 		fileServerHits: atomic.Int32{},
 		db:             dbQueries,
+		platform:       platform,
 	}
 
 	const port = "8080"
@@ -79,7 +76,7 @@ func main() {
 	mux.HandleFunc("GET /api/healthz", healthzHandler)
 
 	mux.HandleFunc("GET /admin/metrics", cfg.metricHandler)
-	mux.HandleFunc("POST /admin/reset", cfg.resetHandler)
+	mux.HandleFunc("POST /admin/reset", cfg.middlewareDevOnlyEndpoint(cfg.resetHandler))
 
 	mux.HandleFunc("POST /api/validate_chirp", handleValidateChirp)
 
