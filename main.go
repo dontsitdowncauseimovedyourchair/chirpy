@@ -78,9 +78,9 @@ func main() {
 	mux.HandleFunc("GET /admin/metrics", cfg.metricHandler)
 	mux.HandleFunc("POST /admin/reset", cfg.middlewareDevOnlyEndpoint(cfg.resetHandler))
 
-	mux.HandleFunc("POST /api/validate_chirp", handleValidateChirp)
-
 	mux.HandleFunc("POST /api/users", cfg.handleUsersPost)
+
+	mux.HandleFunc("POST /api/chirps", cfg.handleChirpsPost)
 
 	log.Fatal(server.ListenAndServe())
 }
