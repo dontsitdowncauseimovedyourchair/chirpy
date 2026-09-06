@@ -8,3 +8,11 @@ VALUES (
         $5
        )
 RETURNING *;
+
+-- name: FetchAllChirps :many
+SELECT * FROM chirps
+ORDER BY created_at ASC;
+
+-- name: FetchChirpById :one
+SELECT * FROM chirps
+WHERE id = $1;

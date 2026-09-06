@@ -20,3 +20,7 @@ type Chirp struct {
 	Body      string    `json:"body"`
 	UserID    uuid.UUID `json:"user_id"`
 }
+
+type Chirps struct {
+	Chirps []Chirp
+}

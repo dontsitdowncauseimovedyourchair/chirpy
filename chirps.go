@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"log"
@@ -105,4 +106,42 @@ func (cfg *apiConfig) handleChirpsPost(w http.ResponseWriter, r *http.Request) {
 		Body:      dbChirp.Body,
 		UserID:    dbChirp.UserID,
 	})
+}
+
+func (cfg *apiConfig) handleChirpsGet(w http.ResponseWriter, r *http.Request) {
+	chirps, err := cfg.db.FetchAllChirps(r.Context())
+	if err != nil {
+		log.Printf("Flop fetching chirps: %s\n", err.Error())
+		respondWithError(w, http.StatusInternalServerError, "Flop fetching chirps. Sorry :(")
+		return
+	}
+
+	var payloadChirps []Chirp
+
+	for i := range chirps {
+		payloadChirps = append(payloadChirps, Chirp(chirps[i]))
+	}
+
+	respondWithJson(w, http.StatusOK, payloadChirps)
+}
+
+func (cfg *apiConfig) handleSingletonChirpsGet(w http.ResponseWriter, r *http.Request) {
+	chirpID := r.PathValue("chirpID")
+	chirp_uuid, err := uuid.Parse(chirpID)
+	if err != nil {
+		respondWithError(w, http.StatusBadRequest, "flop or malformed UUID for chirp")
+		return
+	}
+
+	chirp, err := cfg.db.FetchChirpById(r.Context(), chirp_uuid)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			respondWithError(w, http.StatusNotFound, "404 chirp not found")
+			return
+		}
+		respondWithError(w, http.StatusInternalServerError, "flop fetching chirp")
+		return
+	}
+
+	respondWithJson(w, http.StatusOK, Chirp(chirp))
 }
