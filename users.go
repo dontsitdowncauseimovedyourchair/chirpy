@@ -7,13 +7,15 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/dontsitdowncauseimovedyourchair/chirpy/internal/auth"
 	"github.com/dontsitdowncauseimovedyourchair/chirpy/internal/database"
 	"github.com/google/uuid"
 )
 
 func (cfg *apiConfig) handleUsersPost(w http.ResponseWriter, r *http.Request) {
 	type requestForm struct {
-		Email string `json:"email"`
+		Email    string `json:"email"`
+		Password string `json:"password"`
 	}
 
 	data, err := io.ReadAll(r.Body)
@@ -29,11 +31,18 @@ func (cfg *apiConfig) handleUsersPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	hashed_pass, err := auth.HashPassword(form.Password)
+	if err != nil {
+		respondWithError(w, http.StatusBadRequest, "password is flop")
+		return
+	}
+
 	user, err := cfg.db.CreateUser(r.Context(), database.CreateUserParams{
-		ID:        uuid.New(),
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
-		Email:     form.Email,
+		ID:             uuid.New(),
+		CreatedAt:      time.Now(),
+		UpdatedAt:      time.Now(),
+		Email:          form.Email,
+		HashedPassword: hashed_pass,
 	})
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "Flop on server registering email. Sorry :(")
