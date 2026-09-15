@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/dontsitdowncauseimovedyourchair/chirpy/internal/auth"
 	"github.com/dontsitdowncauseimovedyourchair/chirpy/internal/database"
 	"github.com/google/uuid"
 	"github.com/lib/pq"
@@ -56,21 +57,27 @@ func filterBadWords(msg string) string {
 
 func (cfg *apiConfig) handleChirpsPost(w http.ResponseWriter, r *http.Request) {
 	type ChirpReq struct {
-		Body   string    `json:"body"`
-		UserID uuid.UUID `json:"user_id"`
+		Body string `json:"body"`
+	}
+
+	token, err := auth.GetBearerToken(r.Header)
+	if err != nil {
+		respondWithError(w, http.StatusUnauthorized, "your auth is flop")
+		return
+	}
+
+	userID, err := auth.ValidateJWT(token, cfg.secret)
+	if err != nil {
+		respondWithError(w, http.StatusUnauthorized, "your auth is flop")
+		return
 	}
 
 	decoder := json.NewDecoder(r.Body)
 	var chirp ChirpReq
-	err := decoder.Decode(&chirp)
+	err = decoder.Decode(&chirp)
 	if err != nil {
 		log.Printf("Flop decoding chirp: %s\n", err.Error())
-		respondWithError(w, http.StatusBadRequest, "Invalid request payload or user ID")
-		return
-	}
-
-	if chirp.UserID == uuid.Nil {
-		respondWithError(w, http.StatusBadRequest, "User ID is required")
+		respondWithError(w, http.StatusBadRequest, "Invalid request payload")
 		return
 	}
 
@@ -87,7 +94,7 @@ func (cfg *apiConfig) handleChirpsPost(w http.ResponseWriter, r *http.Request) {
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
 		Body:      chirp.Body,
-		UserID:    chirp.UserID,
+		UserID:    userID,
 	})
 	if err != nil {
 		var pqErr *pq.Error
