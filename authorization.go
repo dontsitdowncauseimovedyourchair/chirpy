@@ -75,3 +75,44 @@ func (cfg *apiConfig) handleUsersPut(w http.ResponseWriter, r *http.Request) {
 		Email:      req.Email,
 	})
 }
+
+func (cfg *apiConfig) handleChirpsDelete(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("chirpID")
+	token, err := auth.GetBearerToken(r.Header)
+	if err != nil {
+		respondWithError(w, http.StatusUnauthorized, "token flop: "+err.Error())
+		return
+	}
+
+	userID, err := auth.ValidateJWT(token, cfg.secret)
+	if err != nil || userID == uuid.Nil {
+		respondWithError(w, http.StatusUnauthorized, "flop token")
+		return
+	}
+
+	chirpID, err := uuid.Parse(id)
+	if err != nil {
+		respondWithError(w, http.StatusNotFound, "chirp not found")
+		return
+	}
+
+	chirp, err := cfg.db.FetchChirpById(r.Context(), chirpID)
+	if err != nil {
+		respondWithError(w, http.StatusNotFound, "chirp not found")
+		return
+	}
+
+	if userID != chirp.UserID {
+		respondWithError(w, http.StatusForbidden, "not your chirp my friendo!")
+		return
+	}
+
+	err = cfg.db.DeleteChirpByID(r.Context(), chirp.ID)
+	if err != nil {
+		log.Printf("flop deleting chirp: %s\n", err.Error())
+		respondWithError(w, http.StatusInternalServerError, "flop deleting chirp")
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
