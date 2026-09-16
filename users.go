@@ -57,5 +57,6 @@ func (cfg *apiConfig) handleUsersPost(w http.ResponseWriter, r *http.Request) {
 		user.Email,
 		"",
 		"",
+		user.IsChirpyRed,
 	})
 }

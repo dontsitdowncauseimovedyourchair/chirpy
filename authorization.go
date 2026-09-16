@@ -69,10 +69,11 @@ func (cfg *apiConfig) handleUsersPut(w http.ResponseWriter, r *http.Request) {
 	}
 
 	respondWithJson(w, http.StatusOK, User{
-		Id:         userID,
-		Created_at: user.CreatedAt,
-		Updated_at: user.UpdatedAt,
-		Email:      req.Email,
+		Id:          userID,
+		Created_at:  user.CreatedAt,
+		Updated_at:  user.UpdatedAt,
+		Email:       req.Email,
+		IsChirpyRed: user.IsChirpyRed,
 	})
 }
 

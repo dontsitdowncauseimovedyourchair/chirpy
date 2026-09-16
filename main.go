@@ -20,6 +20,7 @@ type apiConfig struct {
 	db             *database.Queries
 	platform       string
 	secret         string
+	polkaKey       string
 }
 
 func (cfg *apiConfig) middlewareMetricsInc(next http.Handler) http.Handler {
@@ -51,6 +52,7 @@ func main() {
 	dbURL := os.Getenv("DB_URL")
 	platform := os.Getenv("PLATFORM")
 	secret := os.Getenv("SECRET")
+	polkaKey := os.Getenv("POLKA_KEY")
 
 	db, err := sql.Open("postgres", dbURL)
 
@@ -66,6 +68,7 @@ func main() {
 		db:             dbQueries,
 		platform:       platform,
 		secret:         secret,
+		polkaKey:       polkaKey,
 	}
 
 	const port = "8080"
@@ -95,6 +98,8 @@ func main() {
 
 	mux.HandleFunc("POST /api/refresh", cfg.handleRefreshPost)
 	mux.HandleFunc("POST /api/revoke", cfg.handleRevokePost)
+
+	mux.HandleFunc("POST /api/polka/webhooks", cfg.handlePolkaWebhookPost)
 
 	log.Fatal(server.ListenAndServe())
 }
