@@ -84,6 +84,7 @@ func main() {
 	mux.HandleFunc("POST /admin/reset", cfg.middlewareDevOnlyEndpoint(cfg.resetHandler))
 
 	mux.HandleFunc("POST /api/users", cfg.handleUsersPost)
+	mux.HandleFunc("PUT /api/users", cfg.handleUsersPut)
 
 	mux.HandleFunc("POST /api/chirps", cfg.handleChirpsPost)
 	mux.HandleFunc("GET /api/chirps", cfg.handleChirpsGet)

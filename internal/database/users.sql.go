@@ -69,6 +69,40 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error
 	return i, err
 }
 
+const getUserByID = `-- name: GetUserByID :one
+SELECT id, created_at, updated_at, email, hashed_password FROM users
+WHERE ID = $1
+`
+
+func (q *Queries) GetUserByID(ctx context.Context, id uuid.UUID) (User, error) {
+	row := q.db.QueryRowContext(ctx, getUserByID, id)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.Email,
+		&i.HashedPassword,
+	)
+	return i, err
+}
+
+const updateEmailPassword = `-- name: UpdateEmailPassword :exec
+UPDATE users SET email = $2, hashed_password = $3, updated_at = now()
+WHERE id = $1
+`
+
+type UpdateEmailPasswordParams struct {
+	ID             uuid.UUID
+	Email          string
+	HashedPassword string
+}
+
+func (q *Queries) UpdateEmailPassword(ctx context.Context, arg UpdateEmailPasswordParams) error {
+	_, err := q.db.ExecContext(ctx, updateEmailPassword, arg.ID, arg.Email, arg.HashedPassword)
+	return err
+}
+
 const wipeUsers = `-- name: WipeUsers :exec
 DELETE FROM users
 `
