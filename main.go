@@ -91,5 +91,8 @@ func main() {
 
 	mux.HandleFunc("POST /api/login", cfg.handleLoginPost)
 
+	mux.HandleFunc("POST /api/refresh", cfg.handleRefreshPost)
+	mux.HandleFunc("POST /api/revoke", cfg.handleRevokePost)
+
 	log.Fatal(server.ListenAndServe())
 }

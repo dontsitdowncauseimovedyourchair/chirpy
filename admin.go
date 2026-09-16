@@ -19,7 +19,7 @@ func (cfg *apiConfig) resetHandler(w http.ResponseWriter, r *http.Request) {
 	cfg.fileServerHits.Store(0)
 	err := cfg.db.WipeUsers(r.Context())
 	if err != nil {
-		log.Println("Flop wiping users")
+		log.Printf("Flop wiping users: %s", err.Error())
 		respondWithError(w, http.StatusInternalServerError, "Flopped on our side. Sorry")
 		return
 	}

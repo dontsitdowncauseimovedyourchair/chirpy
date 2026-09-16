@@ -56,5 +56,6 @@ func (cfg *apiConfig) handleUsersPost(w http.ResponseWriter, r *http.Request) {
 		user.UpdatedAt,
 		user.Email,
 		"",
+		"",
 	})
 }
