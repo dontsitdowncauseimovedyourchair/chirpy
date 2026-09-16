@@ -63,8 +63,17 @@ func ValidateJWT(tokenString, tokenSecret string) (uuid.UUID, error) {
 func GetBearerToken(headers http.Header) (string, error) {
 	auth := headers.Get("Authorization")
 	if len(auth) == 0 {
-		return "", fmt.Errorf("bearer token missing")
+		return "", fmt.Errorf("auth headers missing")
 	}
 	token := strings.ReplaceAll(auth, "Bearer ", "")
+	return token, nil
+}
+
+func GetAPIKey(headers http.Header) (string, error) {
+	auth := headers.Get("Authorization")
+	if len(auth) == 0 {
+		return "", fmt.Errorf("auth headers missing")
+	}
+	token := strings.ReplaceAll(auth, "ApiKey ", "")
 	return token, nil
 }

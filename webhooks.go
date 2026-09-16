@@ -3,12 +3,26 @@ package main
 import (
 	"encoding/json"
 	"io"
+	"log"
 	"net/http"
 
+	"github.com/dontsitdowncauseimovedyourchair/chirpy/internal/auth"
 	"github.com/google/uuid"
 )
 
 func (cfg *apiConfig) handlePolkaWebhookPost(w http.ResponseWriter, r *http.Request) {
+	APIKey, err := auth.GetAPIKey(r.Header)
+	if err != nil {
+		log.Printf("flop getting API key: %s\n", err.Error())
+		respondWithError(w, http.StatusUnauthorized, "flop API key")
+		return
+	}
+
+	if APIKey != cfg.polkaKey {
+		respondWithError(w, http.StatusUnauthorized, "flop API key")
+		return
+	}
+
 	type reqBody struct {
 		Event string `json:"event"`
 		Data  struct {
