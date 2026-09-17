@@ -63,11 +63,13 @@ func (q *Queries) DeleteChirpByID(ctx context.Context, id uuid.UUID) error {
 
 const fetchAllChirps = `-- name: FetchAllChirps :many
 SELECT id, created_at, updated_at, body, user_id FROM chirps
-ORDER BY created_at ASC
+ORDER BY
+    CASE WHEN $1::boolean = false THEN created_at END ASC,
+    CASE WHEN $1::boolean = true THEN created_at END DESC
 `
 
-func (q *Queries) FetchAllChirps(ctx context.Context) ([]Chirp, error) {
-	rows, err := q.db.QueryContext(ctx, fetchAllChirps)
+func (q *Queries) FetchAllChirps(ctx context.Context, isDesc bool) ([]Chirp, error) {
+	rows, err := q.db.QueryContext(ctx, fetchAllChirps, isDesc)
 	if err != nil {
 		return nil, err
 	}
@@ -111,4 +113,46 @@ func (q *Queries) FetchChirpById(ctx context.Context, id uuid.UUID) (Chirp, erro
 		&i.UserID,
 	)
 	return i, err
+}
+
+const fetchChirpsByAuthorID = `-- name: FetchChirpsByAuthorID :many
+SELECT id, created_at, updated_at, body, user_id FROM chirps
+WHERE user_id = $1
+ORDER BY
+    CASE WHEN $2::boolean = false THEN created_at END ASC,
+    CASE WHEN $2::boolean = true THEN created_at END DESC
+`
+
+type FetchChirpsByAuthorIDParams struct {
+	UserID uuid.UUID
+	IsDesc bool
+}
+
+func (q *Queries) FetchChirpsByAuthorID(ctx context.Context, arg FetchChirpsByAuthorIDParams) ([]Chirp, error) {
+	rows, err := q.db.QueryContext(ctx, fetchChirpsByAuthorID, arg.UserID, arg.IsDesc)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Chirp
+	for rows.Next() {
+		var i Chirp
+		if err := rows.Scan(
+			&i.ID,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.Body,
+			&i.UserID,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }

@@ -116,19 +116,42 @@ func (cfg *apiConfig) handleChirpsPost(w http.ResponseWriter, r *http.Request) {
 }
 
 func (cfg *apiConfig) handleChirpsGet(w http.ResponseWriter, r *http.Request) {
-	chirps, err := cfg.db.FetchAllChirps(r.Context())
-	if err != nil {
-		log.Printf("Flop fetching chirps: %s\n", err.Error())
-		respondWithError(w, http.StatusInternalServerError, "Flop fetching chirps. Sorry :(")
-		return
+	var chirps []database.Chirp
+	var err error
+
+	rawAuthorID := r.URL.Query().Get("author_id")
+	rawSort := r.URL.Query().Get("sort")
+	isDesc := "desc" == rawSort
+
+	if len(rawAuthorID) == 0 {
+		chirps, err = cfg.db.FetchAllChirps(r.Context(), isDesc)
+		if err != nil {
+			log.Printf("Flop fetching chirps: %s\n", err.Error())
+			respondWithError(w, http.StatusInternalServerError, "Flop fetching chirps. Sorry :(")
+			return
+		}
+	} else {
+		authorID, err := uuid.Parse(rawAuthorID)
+		if err != nil {
+			respondWithError(w, http.StatusNotFound, "flop author ID")
+			return
+		}
+
+		chirps, err = cfg.db.FetchChirpsByAuthorID(r.Context(), database.FetchChirpsByAuthorIDParams{
+			UserID: authorID,
+			IsDesc: isDesc,
+		})
+		if err != nil {
+			log.Printf("Flop fetching chirps: %s\n", err.Error())
+			respondWithError(w, http.StatusInternalServerError, "Flop fetching chirps. Sorry :(")
+			return
+		}
 	}
 
 	var payloadChirps []Chirp
-
 	for i := range chirps {
 		payloadChirps = append(payloadChirps, Chirp(chirps[i]))
 	}
-
 	respondWithJson(w, http.StatusOK, payloadChirps)
 }
 
